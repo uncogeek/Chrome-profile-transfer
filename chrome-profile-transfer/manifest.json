@@ -1,0 +1,14 @@
+{
+  "manifest_version": 3,
+  "name": "Chrome Profile Transfer",
+  "version": "1.1.0",
+  "description": "Transfer localStorage and IndexedDB for the current website between Chrome profiles. No network requests.",
+  "permissions": [
+    "activeTab",
+    "scripting"
+  ],
+  "action": {
+    "default_title": "Chrome Profile Transfer",
+    "default_popup": "popup.html"
+  }
+}

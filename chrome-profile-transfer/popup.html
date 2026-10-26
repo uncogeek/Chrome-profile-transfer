@@ -1,0 +1,10 @@
+<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Chrome Profile Transfer</title><link rel="stylesheet" href="popup.css"></head>
+<body><main><h1>Chrome Profile Transfer</h1><p class="muted">روی تب فعال هر وب‌سایت HTTP/HTTPS اجرا می‌شود. اطلاعات به هیچ سروری ارسال نمی‌شود.</p>
+<div class="notice">ابتدا در پروفایل ۱ خروجی بگیر. سپس در پروفایل ۲ با حساب خودت وارد همان سایت شو و همان فایل را وارد کن. بهتر است هر دو پروفایل در یک صفحه مشابه از همان سایت باشند.</div>
+<label class="opt"><input type="checkbox" id="idb" checked> انتقال IndexedDB (اطلاعات ذخیره‌شده پیشرفته)</label>
+<label class="opt"><input type="checkbox" id="sensitive"> شامل کلیدهایی با نام حساس مثل token/auth هم بشود (توصیه نمی‌شود)</label>
+<button id="export">۱. خروجی از این پروفایل (JSON)</button>
+<button id="import" class="secondary">۲. وارد کردن در این پروفایل</button>
+<input id="file" type="file" accept=".json,application/json" hidden>
+<div id="status" role="status">آماده</div>
+<p class="fine">کوکی‌ها عمداً منتقل نمی‌شوند. انتقال فقط داده‌های ذخیره‌شده در Origin فعلی است؛ تنظیمات سروری یا افزونه‌های دیگر شامل نمی‌شوند. پیش از Import بهتر است از پروفایل مقصد هم یک خروجی پشتیبان بگیری.</p></main><script src="popup.js"></script></body></html>
