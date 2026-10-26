@@ -2,6 +2,8 @@
 (() => {
  if (globalThis.__chromeProfileTransferListener) return;
  globalThis.__chromeProfileTransferListener = true;
+ let lang='en';
+ const msg=(en,fa)=>lang==='fa'?fa:en;
  const sensitive = /(^|[_.:-])(auth|token|access.?token|refresh.?token|session|jwt|secret|password|credential|api.?key|bearer|csrf)([_.:-]|$)/i;
  const allow = () => location.protocol === 'https:' || location.protocol === 'http:';
  const req = r => new Promise((resolve,reject) => {r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error || new Error('IDB request failed'));});
@@ -36,7 +38,7 @@
  }
  async function exportIDB(includeSensitive){
    const result=[], warnings=[];
-   if(typeof indexedDB.databases!=='function'){warnings.push('مرورگر امکان فهرست کردن IndexedDB را ندارد');return {result,warnings};}
+   if(typeof indexedDB.databases!=='function'){warnings.push(msg('This browser cannot list IndexedDB databases','مرورگر امکان فهرست کردن IndexedDB را ندارد'));return {result,warnings};}
    const dbs=await indexedDB.databases();
    for(const info of dbs){const name=info.name;if(!name || (!includeSensitive&&sensitive.test(name)))continue;
      let db;try{
@@ -59,11 +61,11 @@
        // Do not upgrade an existing database's schema: that can break an application.
        const known=typeof indexedDB.databases==='function'?await indexedDB.databases():[];
        const existing=known.find(x=>x.name===item.name);
-       if(!existing){warnings.push(`پایگاه داده ${item.name} در مقصد وجود ندارد؛ برای جلوگیری از تغییر ساختار ساخته نشد`);continue;}
+       if(!existing){warnings.push(msg(`Database ${item.name} does not exist in the destination; it was not created to avoid changing the schema`,`پایگاه داده ${item.name} در مقصد وجود ندارد؛ برای جلوگیری از تغییر ساختار ساخته نشد`));continue;}
        db=await new Promise((resolve,reject)=>{const r=indexedDB.open(item.name);r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);r.onupgradeneeded=()=>{r.transaction.abort();reject(new Error('Unexpected schema change'));};});
        for(const entry of item.stores||[]){
          if(!includeSensitive&&sensitive.test(entry.name))continue;
-         if(!db.objectStoreNames.contains(entry.name)){warnings.push(`${item.name}/${entry.name}: در مقصد وجود ندارد`);continue;}
+         if(!db.objectStoreNames.contains(entry.name)){warnings.push(msg(`${item.name}/${entry.name}: missing in the destination`,`${item.name}/${entry.name}: در مقصد وجود ندارد`));continue;}
          const tx=db.transaction(entry.name,'readwrite'),store=tx.objectStore(entry.name);let count=0;
          try{
            for(const record of entry.records||[]){
@@ -80,7 +82,8 @@
  chrome.runtime.onMessage.addListener((message,sender,sendResponse)=>{
    if(!message||!['EXPORT','IMPORT'].includes(message.type))return;
    (async()=>{
-     if(!allow())throw new Error('این ابزار فقط روی وب‌سایت‌های http یا https اجرا می‌شود');
+     lang=message.language==='fa'?'fa':'en';
+     if(!allow())throw new Error(msg('This tool works only on HTTP or HTTPS websites','این ابزار فقط روی وب‌سایت‌های http یا https اجرا می‌شود'));
      const includeSensitive=!!message.includeSensitive;
      if(message.type==='EXPORT'){
        const local={};for(let i=0;i<localStorage.length;i++){const key=localStorage.key(i);if(includeSensitive||!sensitive.test(key))local[key]=localStorage.getItem(key);}
@@ -88,7 +91,7 @@
        return {ok:true,data:{format:'chrome-profile-transfer',version:1,origin:location.origin,exportedAt:new Date().toISOString(),localStorage:local,indexedDB:idb.result},summary:{keys:Object.keys(local).length,databases:idb.result.length,records:idb.result.reduce((n,d)=>n+d.stores.reduce((a,s)=>a+s.records.length,0),0)},warnings:idb.warnings};
      }
      const data=message.data;
-     if(!data||!['chrome-profile-transfer','faraz-profile-transfer'].includes(data.format)||data.version!==1||data.origin!==location.origin)throw new Error('فایل متعلق به نسخه یا آدرس دیگری است. از همان زیردامنه در هر دو پروفایل استفاده کن.');
+     if(!data||!['chrome-profile-transfer','faraz-profile-transfer'].includes(data.format)||data.version!==1||data.origin!==location.origin)throw new Error(msg('This file belongs to a different version or origin. Open the exact same website origin in both profiles.','فایل متعلق به نسخه یا آدرس دیگری است. از همان زیردامنه در هر دو پروفایل استفاده کن.'));
      let keys=0;for(const [k,v] of Object.entries(data.localStorage||{})){if(!includeSensitive&&sensitive.test(k))continue;if(typeof v!=='string')continue;localStorage.setItem(k,v);keys++;}
      const idb=message.withIDB?await importIDB(data.indexedDB,includeSensitive):{rows:0,stores:0,warnings:[]};
      return {ok:true,summary:{keys,records:idb.rows,stores:idb.stores},warnings:idb.warnings};
